@@ -1,0 +1,128 @@
+Test case "UART Loopback"
+=========================
+Christoph Thelen <cthelen@hilscher.com>
+:Author Initials: CT
+
+
+[[About, About]]
+== About
+
+This document describes the "UART Loopback" test for the Muhkuh test framework.
+
+
+[[Test_description,Test description]]
+== Test description
+
+The test "UART Loopback" checks one UART interface with a loopback connection. Please see the chapter <<Loopback_connectors>> for details on the necessary connector.
+It configures the interface to the following settings:
+
+* 115200 baud
+* 8 data bits
+* 1 stop bit
+* no parity
+
+It sends a sequence 256 values which starts at +0x00+ and is incremented by 1. The last value to be sent is +0xff+.
+All sent values must be received in the correct order on the same UART port.
+
+
+[[Loopback_connectors, Loopback connectors]]
+== Loopback connectors
+
+The test needs a loopback connection of the UART signals. The following signals must be connected directly:
+
+* +RXD+ with +TXD+
+* +RTS+ with +CTS+
+
+Usually the UART interface on a netX board has a male DE-9 connector. The loopback connector is a female DE-9 connector in this case.
+The following image shows a front view of the female DE-9 connector.
+
+.Front view of a female DE-9 connector:
+-----------------------------------------------------------------------------
+  5       1
+  o o o o o
+   o o o o
+   9     6
+-----------------------------------------------------------------------------
+
+The following table shows the standard pinout of a DE-9 UART connector:
+
+.Standard pinout of a DE-9 UART connector.
+[cols="<,<m,<m",options="header"]
+|================================
+|Pin    |Name   |Description
+|1      |CD     |Carrier Detect
+|2      |RXD    |Receive Data
+|3      |TXD    |Transmit Data
+|4      |DTR    |Data Terminal Ready
+|5      |GND    |System Ground
+|6      |DSR    |Data Set Ready
+|7      |RTS    |Request to Send
+|8      |CTS    |Clear to Send
+|9      |RI     |Ring Indicator 
+|================================
+
+With this standard layout the loopback connection is done with the following pins:
+
+.Loopback connection with a standard DE-9 UART connector.
+* pin 2 with pin 3         (+RXD+ and +TXD+)
+* pin 7 with pin 8         (+RTS+ and +CTS+)
+
+
+[[Parameters, Parameters]]
+== Parameters
+
++unit+::
+  Specify the index of the UART unit to test. Please see the chapter <<The_UART_Unit>> for details.
++mmio_rxd+::
+  Only needed for MMIO connections: the index of the MMIO pin connected to the RXD signal. Please see the chapter <<The_UART_Unit>> for details.
++mmio_txd+::
+  Only needed for MMIO connections: the index of the MMIO pin connected to the TXD signal. Please see the chapter <<The_UART_Unit>> for details.
++mmio_cts+::
+  Only needed for MMIO connections: the index of the MMIO pin connected to the CTS signal. Please see the chapter <<The_UART_Unit>> for details.
++mmio_rts+::
+  Only needed for MMIO connections: the index of the MMIO pin connected to the RTS signal. Please see the chapter <<The_UART_Unit>> for details.
+
+
+[[The_UART_Unit, The UART Unit]]
+=== The UART Unit
+
+The unit parameter specifies the pins the UART interface is connected to. Most of the netX controller have 3 UART units. The netX10 has only 2 of them.
+The following table shows the available UART units on the different netX controllers.
+
+.Available UART units on the different netX controllers.
+[horizontal]
+netx500::  +0+, +1+, +2+
+netx100::  +0+, +1+, +2+
+netx52::   +0+, +1+, +2+
+netx51::   +0+, +1+, +2+
+netx50::   +0+, +1+, +2+
+netx10::   +0+, +1+
+
+Depending on the netX controller type and the unit number, the UART must be connected to a specific set of signals. No netX controller has dedicated pins for any UART unit. Instead all UART signals are multiplexed with other signals. All signal names correspond to the netX pinning specified by Hilscher.
+
+The values starting with 'GPIO...' mean that the UART signal is multiplexed with the named GPIO signal.
+
+The value 'MMIO' means that the UART signal is only available on the MMIO multiplex matrix. The matrix can be configured by software. This means that the according signal can be routed to any MMIO pin. The index of the MMIO pin must be specified as a parameter.
+
+[cols=">,>m,>,>,>,>",options="header"]
+|==========================
+|       netX| unit|      RXD|      TXD|      CTS|     RTS
+.3+| netX500|    0|  'GPIO0'|  'GPIO1'|  'GPIO2'|  'GPIO3'
+            |    1|  'GPIO4'|  'GPIO5'|  'GPIO6'|  'GPIO7'
+            |    2|  'GPIO8'|  'GPIO9'| 'GPIO10'| 'GPIO11'
+.3+| netX100|    0|  'GPIO0'|  'GPIO1'|  'GPIO2'|  'GPIO3'
+            |    1|  'GPIO4'|  'GPIO5'|  'GPIO6'|  'GPIO7'
+            |    2|  'GPIO8'|  'GPIO9'| 'GPIO10'| 'GPIO11'
+.3+|  netX52|    0|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    1|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    2|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+.3+|  netX51|    0|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    1|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    2|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+.3+|  netX50|    0|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    1|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    2|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+.2+|  netX10|    0|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+            |    1|   'MMIO'|   'MMIO'|   'MMIO'|   'MMIO'
+|==========================
+
