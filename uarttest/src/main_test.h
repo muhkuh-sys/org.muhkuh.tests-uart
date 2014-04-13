@@ -17,6 +17,7 @@ typedef struct UARTTEST_PARAMETER_STRUCT
 {
 	unsigned long ulVerboseLevel;
 	unsigned int uiUnit;
+	unsigned long ulBaudDivider;
 	unsigned char aucMMIO[4];
 } UARTTEST_PARAMETER_T;
 

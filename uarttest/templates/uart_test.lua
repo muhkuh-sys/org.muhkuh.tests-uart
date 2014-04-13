@@ -167,10 +167,26 @@ function initialize(tPlugin, strPattern, ulVerboseLevel, uiUnit, ucMmioRxd, ucMm
 	ulMmioCfg = ulMmioCfg + (ucMmioCts * math.pow(256, ${UARTTEST_PARAMETER_MMIO_INDEX_CTS}))
 	ulMmioCfg = ulMmioCfg + (ucMmioRts * math.pow(256, ${UARTTEST_PARAMETER_MMIO_INDEX_RTS}))
 	
+	
+	-- Transfer the data with 115200 baud.
+	local ulBaud = 115200
+	
+	-- All UART units are clocked with 100MHz.
+	local ulUnitFrequency = 100000000
+	
+	-- Calculate the baud rate divider from the requested speed and the unit clocking.
+	local ulBaudRateDivider = math.floor(((ulBaud*16*65536)/ulUnitFrequency)+0.5)
+	if ulBaudRateDivider==0 then
+		error("The baud rate divider is 0!")
+	elseif ulBaudRateDivider>0xffff then
+		error("The baud rate divider exceeds the allowed range!")
+	end
+	
 	-- Collect the parameter.
 	local atParameters = {
 		ulVerboseLevel,                      -- Verbose level. 
 		uiUnit,                              -- The UART unit number.
+		ulBaudRateDivider,                   -- The baud rate divider.
 		ulMmioCfg                            -- The MMIO configuration.
 	}
 	
