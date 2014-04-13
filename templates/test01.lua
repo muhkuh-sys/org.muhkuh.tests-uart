@@ -54,6 +54,14 @@ CFG_aParameterDefinitions = {
 		validate=parameters.test_uint32,
 		constrains=nil
 	},
+	{
+		name="flags",
+		default="USE_RTS_CTS",
+		help="The flags for the test.",
+		mandatory=false,
+		validate=parameters.test_choice_multiple,
+		constrains="USE_RTS_CTS"
+	}
 }
 
 
@@ -109,6 +117,17 @@ function run(aParameters)
 	local ucMmioCts      = tonumber(aParameters["mmio_cts"])
 	local ucMmioRts      = tonumber(aParameters["mmio_rts"])
 	
+	-- Parse the test list.
+	local astrElements = parameters.split_string(aParameters["flags"])
+	local ulFlags = 0
+	for iCnt,strElement in ipairs(astrElements) do
+		if strElement=="USE_RTS_CTS" then
+			ulFlags = ulFlags + uart_test.UARTTEST_FLAGS_Use_CTS_RTS
+		else
+			error(string.format("Unknown flag: %s", strElement))
+		end
+	end
+	
 	----------------------------------------------------------------------
 	--
 	-- Open the connection to the netX.
@@ -140,7 +159,7 @@ function run(aParameters)
 		end
 	end
 	
-	local ulResult = uart_test.initialize(tPlugin, "netx/uarttest_netx%d.bin", ulVerboseLevel, uiUnit, ucMmioRxd, ucMmioTxd, ucMmioCts, ucMmioRts)
+	local ulResult = uart_test.run(tPlugin, "netx/uarttest_netx%d.bin", ulVerboseLevel, uiUnit, ucMmioRxd, ucMmioTxd, ucMmioCts, ucMmioRts, ulFlags)
 	if ulResult~=0 then
 		error("The UART test failed!")
 	end

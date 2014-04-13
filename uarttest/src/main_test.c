@@ -138,6 +138,7 @@ typedef struct UART_CONFIGURATION_STRUCT
 	unsigned long ulBaudDiv;
 	HOSTADEF(UART) * ptArea;
 	unsigned char aucMMIO[4];
+	unsigned long ulFlags;
 } UART_CONFIGURATION_T;
 
 
@@ -314,6 +315,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 	HOSTADEF(UART) *ptUartArea;
 	int iResult;
 	unsigned int uiIdx;
+	unsigned long ulUseRtsCts;
 #if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56 || ASIC_TYP==6
 	HOSTDEF(ptAsicCtrlArea);
 	HOSTDEF(ptMmioCtrlArea);
@@ -324,6 +326,9 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 
 	/* expect error */
 	iResult = -1;
+
+	ulUseRtsCts  = ptCfg->ulFlags;
+	ulUseRtsCts &= (unsigned long)UARTTEST_FLAGS_Use_CTS_RTS;
 
 	uiUartUnit = ptCfg->uiUnit;
 	if( uiUartUnit<(sizeof(atUartInstances)/sizeof(atUartInstances[0])) )
@@ -352,13 +357,20 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 
 		/* Enable the drivers for the TXD and RTS line. */
 		ulValue  = HOSTMSK(uartdrvout_DRVTX);
-		ulValue |= HOSTMSK(uartdrvout_DRVRTS);
+		if( ulUseRtsCts!=0 )
+		{
+			ulValue |= HOSTMSK(uartdrvout_DRVRTS);
+		}
 		ptUartArea->ulUartdrvout = ulValue;
 
 		/* Enable RTS/CTS mode. */
-		ulValue  = HOSTMSK(uartrts_AUTO);
-		ulValue |= HOSTMSK(uartrts_CTS_ctr);
-		ulValue |= HOSTMSK(uartrts_CTS_pol);
+		ulValue  = 0;
+		if( ulUseRtsCts!=0 )
+		{
+			ulValue |= HOSTMSK(uartrts_AUTO);
+			ulValue |= HOSTMSK(uartrts_CTS_ctr);
+			ulValue |= HOSTMSK(uartrts_CTS_pol);
+		}
 		ptUartArea->ulUartrts = ulValue;
 
 #if ASIC_TYP==50
@@ -379,37 +391,56 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
 			}
-			else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
+
+			if( ulUseRtsCts!=0 )
 			{
-				uprintf("Disable CTS at MMIO%d.\n", uiIdx);
-				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
-			}
-			else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioRts)) )
-			{
-				uprintf("Disable RTS at MMIO%d.\n", uiIdx);
-				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
+				{
+					uprintf("Disable CTS at MMIO%d.\n", uiIdx);
+					ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+					ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				}
+				else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioRts)) )
+				{
+					uprintf("Disable RTS at MMIO%d.\n", uiIdx);
+					ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+					ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				}
 			}
 		}
 
 
 		/* Setup the MMIO pins. */
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
+		}
 
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
+		}
 
-		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
+		if( ulUseRtsCts!=0 )
+		{
+			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
+			if( uiIdx!=0xffU )
+			{
+				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
+			}
 
-		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRts;
+			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
+			if( uiIdx!=0xffU )
+			{
+				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRts;
+			}
+		}
 #elif ASIC_TYP==10 || ASIC_TYP==56 || ASIC_TYP==6
 		/* Loop over the complete MMIO pins and disable all UART instances. */
 		for(uiIdx=0; uiIdx<(sizeof(ptMmioCtrlArea->aulMmio_cfg)/sizeof(ptMmioCtrlArea->aulMmio_cfg[0])); ++uiIdx)
@@ -428,43 +459,65 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
 			}
-			else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
+
+			if( ulUseRtsCts!=0 )
 			{
-				uprintf("Disable CTS at MMIO%d.\n", uiIdx);
-				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
-			}
-			else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioRts)) )
-			{
-				uprintf("Disable RTS at MMIO%d.\n", uiIdx);
-				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
+				{
+					uprintf("Disable CTS at MMIO%d.\n", uiIdx);
+					ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+					ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				}
+				else if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioRts)) )
+				{
+					uprintf("Disable RTS at MMIO%d.\n", uiIdx);
+					ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+					ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
+				}
 			}
 		}
 
 
 		/* Setup the MMIO pins. */
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
+		}
 
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
+		}
 
-		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
+		if( ulUseRtsCts!=0 )
+		{
+			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
+			if( uiIdx!=0xffU )
+			{
+				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
+			}
 
-		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
-		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRts;
+			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
+			if( uiIdx!=0xffU )
+			{
+				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRts;
+			}
+		}
 #elif ASIC_TYP==100 || ASIC_TYP==500
 		uiIdx = uiUartUnit << 2;
 		ptGpioArea->aulGpio_cfg[uiIdx+0] = 2;
 		ptGpioArea->aulGpio_cfg[uiIdx+1] = 2;
-		ptGpioArea->aulGpio_cfg[uiIdx+2] = 2;
-		ptGpioArea->aulGpio_cfg[uiIdx+3] = 2;
+		if( ulUseRtsCts!=0 )
+		{
+			ptGpioArea->aulGpio_cfg[uiIdx+2] = 2;
+			ptGpioArea->aulGpio_cfg[uiIdx+3] = 2;
+		}
 #endif
 
 		/* Enable the UART. */
@@ -583,20 +636,63 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 static void uart_shutdown(UART_CONFIGURATION_T *ptCfg)
 {
 	HOSTADEF(UART) *ptUartArea;
-#if ASIC_TYP==100 || ASIC_TYP==500
+	unsigned long ulUseRtsCts;
+#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56 || ASIC_TYP==6
+	unsigned int uiIdx;
+	HOSTDEF(ptAsicCtrlArea);
+	HOSTDEF(ptMmioCtrlArea);
+#elif ASIC_TYP==100 || ASIC_TYP==500
 	HOSTDEF(ptGpioArea)
 	unsigned int uiIdx;
 #endif
 
 
+	ulUseRtsCts  = ptCfg->ulFlags;
+	ulUseRtsCts &= (unsigned long)UARTTEST_FLAGS_Use_CTS_RTS;
+
 	ptUartArea = ptCfg->ptArea;
 
-#if ASIC_TYP==100 || ASIC_TYP==500
+#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56 || ASIC_TYP==6
+	/* Setup the MMIO pins. */
+	uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
+	if( uiIdx!=0xffU )
+	{
+		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = MMIO_CFG_DISABLE;
+	}
+
+	uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
+	if( uiIdx!=0xffU )
+	{
+		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = MMIO_CFG_DISABLE;
+	}
+
+	if( ulUseRtsCts!=0 )
+	{
+		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = MMIO_CFG_DISABLE;
+		}
+
+		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
+		if( uiIdx!=0xffU )
+		{
+			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = MMIO_CFG_DISABLE;
+		}
+	}
+#elif ASIC_TYP==100 || ASIC_TYP==500
 	uiIdx = ptCfg->uiUnit << 2;
-	ptGpioArea->aulGpio_cfg[uiIdx+0] = 2;
-	ptGpioArea->aulGpio_cfg[uiIdx+1] = 2;
-	ptGpioArea->aulGpio_cfg[uiIdx+2] = 2;
-	ptGpioArea->aulGpio_cfg[uiIdx+3] = 2;
+	ptGpioArea->aulGpio_cfg[uiIdx+0] = 0;
+	ptGpioArea->aulGpio_cfg[uiIdx+1] = 0;
+	if( ulUseRtsCts!=0 )
+	{
+		ptGpioArea->aulGpio_cfg[uiIdx+2] = 0;
+		ptGpioArea->aulGpio_cfg[uiIdx+3] = 0;
+	}
 #endif
 
 	ptUartArea->ulUartcr = 0;
@@ -640,19 +736,26 @@ TEST_RESULT_T test(TEST_PARAMETER_T *ptTestParam)
 	uprintf(". TXD: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD]);
 	uprintf(". CTS: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS]);
 	uprintf(". RTS: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS]);
+	uprintf(". flags: 0x%08x\n", ptTestParams->ulFlags);
 	uprintf("\n");
 	
 	tCfg.uiUnit = ptTestParams->uiUnit;
 	tCfg.ulBaudDiv = ptTestParams->ulBaudDivider;
 	tCfg.ptArea = NULL;
 	memcpy(tCfg.aucMMIO, ptTestParams->aucMMIO, sizeof(tCfg.aucMMIO));
+	tCfg.ulFlags = ptTestParams->ulFlags;
 
-	iResult = rtscts_io_test(&tCfg);
-	if( iResult!=0 )
+	iResult = 0;
+	if( ((ptTestParams->ulFlags)&((unsigned long)UARTTEST_FLAGS_Use_CTS_RTS))!=0 )
 	{
-		uprintf("The RTS/CTS IO test failed!\n");
+		iResult = rtscts_io_test(&tCfg);
+		if( iResult!=0 )
+		{
+			uprintf("The RTS/CTS IO test failed!\n");
+		}
 	}
-	else
+
+	if( iResult==0 )
 	{
 		iResult = uart_init(&tCfg);
 		if( iResult!=0 )

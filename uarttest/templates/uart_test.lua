@@ -36,6 +36,8 @@ UARTTEST_VERSION_MAJ  = ${VERSION_MAJ}
 UARTTEST_VERSION_MIN  = ${VERSION_MIN}
 UARTTEST_VERSION_VCS  = ${VERSION_VCS}
 
+UARTTEST_FLAGS_Use_CTS_RTS = ${UARTTEST_FLAGS_Use_CTS_RTS}
+
 HEADER_MAGIC          = 0x686f6f6d
 
 
@@ -90,7 +92,7 @@ end
 -----------------------------------------------------------------------------
 
 
-function initialize(tPlugin, strPattern, ulVerboseLevel, uiUnit, ucMmioRxd, ucMmioTxd, ucMmioCts, ucMmioRts, fnCallbackProgress, fnCallbackMessage)
+function run(tPlugin, strPattern, ulVerboseLevel, uiUnit, ucMmioRxd, ucMmioTxd, ucMmioCts, ucMmioRts, ulFlags, fnCallbackProgress, fnCallbackMessage)
 	-- Set the defaults for the optional parameter.
 	fnCallbackProgress = fnCallbackProgress or default_callback_progress  -- Use the built-in callback.
 	fnCallbackMessage = fnCallbackMessage or default_callback_message     -- Use the built-in callback.
@@ -187,7 +189,8 @@ function initialize(tPlugin, strPattern, ulVerboseLevel, uiUnit, ucMmioRxd, ucMm
 		ulVerboseLevel,                      -- Verbose level. 
 		uiUnit,                              -- The UART unit number.
 		ulBaudRateDivider,                   -- The baud rate divider.
-		ulMmioCfg                            -- The MMIO configuration.
+		ulMmioCfg,                           -- The MMIO configuration.
+		ulFlags                              -- The flags for the test.
 	}
 	
 	-- Write the standard header.
