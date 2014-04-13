@@ -143,6 +143,169 @@ typedef struct UART_CONFIGURATION_STRUCT
 
 /*-------------------------------------------------------------------------*/
 
+#if ASIC_TYP==56
+static void mmio_set(unsigned int uiIdx, unsigned int uiValue)
+{
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long aulOe[2];
+	unsigned long aulOut[2];
+
+
+	aulOe[0] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0];
+	aulOe[1] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1];
+
+	aulOe[0] |= 1U << uiIdx;
+	aulOe[1] |= 1U << (uiIdx-32U);
+
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = aulOe[0];
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = aulOe[1];
+
+
+	aulOut[0] = ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0];
+	aulOut[1] = ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1];
+
+	if( uiValue==0 )
+	{
+		aulOut[0] &= ~(1U << uiIdx);
+		aulOut[1] &= ~(1U << (uiIdx-32U));
+	}
+	else
+	{
+		aulOut[0] |= 1U << uiIdx;
+		aulOut[1] |= 1U << (uiIdx-32U);
+	}
+
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = aulOut[0];
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] = aulOut[1];
+}
+
+
+static unsigned long mmio_get(unsigned int uiIdx)
+{
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long ulResult;
+
+
+	if( uiIdx<32 )
+	{
+		ulResult  = ptMmioCtrlArea->aulMmio_in_line_status[0];
+		ulResult &= 1U << uiIdx;
+	}
+	else
+	{
+		ulResult  = ptMmioCtrlArea->aulMmio_in_line_status[1];
+		ulResult &= 1U << (uiIdx - 32);
+	}
+
+	return ulResult;
+}
+
+
+static void mmio_set_to_input(unsigned int uiIdx)
+{
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long aulOe[2];
+
+
+	aulOe[0] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0];
+	aulOe[1] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1];
+
+	aulOe[0] &= ~(1U << uiIdx);
+	aulOe[1] &= ~(1U << (uiIdx-32U));
+
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = aulOe[0];
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = aulOe[1];
+}
+#endif
+
+
+static void io_stabilize(void)
+{
+	unsigned long ulTimerHandle;
+	int iElapsed;
+
+
+	/* Delay a few cycles. */
+	ulTimerHandle = systime_get_ms();
+	do
+	{
+		iElapsed = systime_elapsed(ulTimerHandle, 2);
+	} while( iElapsed==0 );
+}
+
+static int rtscts_io_test(UART_CONFIGURATION_T *ptCfg)
+{
+	int iResult;
+#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56 || ASIC_TYP==6
+	unsigned int uiIdxCts;
+	unsigned int uiIdxRts;
+	HOSTDEF(ptAsicCtrlArea);
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long ulValue;
+#elif ASIC_TYP==100 || ASIC_TYP==500
+	HOSTDEF(ptGpioArea);
+#endif
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+#if ASIC_TYP==10
+
+#elif ASIC_TYP==56
+	/* Set the RTS and CTS MMIO pins to PIO mode. */
+	uiIdxCts = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
+	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+	ptMmioCtrlArea->aulMmio_cfg[uiIdxCts] = MMIO_CFG_PIO;
+
+	uiIdxRts = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
+	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+	ptMmioCtrlArea->aulMmio_cfg[uiIdxRts] = MMIO_CFG_PIO;
+
+
+	mmio_set_to_input(uiIdxCts);
+
+	/* Drive RTS to 0. */
+	uprintf("RTS -> 0\n");
+	mmio_set(uiIdxRts, 0);
+	io_stabilize();
+	ulValue = mmio_get(uiIdxCts);
+	if( ulValue!=0 )
+	{
+		uprintf("RTS set to 0, but CTS does not follow!\n");
+	}
+	else
+	{
+		/* Drive RTS to 1. */
+		uprintf("RTS -> 1\n");
+		mmio_set_to_input(uiIdxCts);
+		mmio_set(uiIdxRts, 1);
+		io_stabilize();
+		ulValue = mmio_get(uiIdxCts);
+		if( ulValue==0 )
+		{
+			uprintf("RTS set to 1, but CTS does not follow!\n");
+		}
+		else
+		{
+			iResult = 0;
+		}
+	}
+
+	/* Set RTS back to input. */
+	mmio_set_to_input(uiIdxRts);
+#elif ASIC_TYP==50
+
+#elif ASIC_TYP==100 || ASIC_TYP==500
+
+#endif
+
+	return iResult;
+}
+
+
+/*-------------------------------------------------------------------------*/
+
 /* Setup the UART unit. */
 static int uart_init(UART_CONFIGURATION_T *ptCfg)
 {
@@ -158,10 +321,6 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 	HOSTDEF(ptGpioArea);
 #endif
 
-
-	/* TODO: drive the RTS pin with GPIO/MMIO and receive with the CTS
-	 * pin to be completely sure that the connection works.
-	 */
 
 	/* expect error */
 	iResult = -1;
@@ -196,14 +355,11 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 		ulValue |= HOSTMSK(uartdrvout_DRVRTS);
 		ptUartArea->ulUartdrvout = ulValue;
 
-		/* Disable RTS/CTS mode. */
+		/* Enable RTS/CTS mode. */
 		ulValue  = HOSTMSK(uartrts_AUTO);
 		ulValue |= HOSTMSK(uartrts_CTS_ctr);
 		ulValue |= HOSTMSK(uartrts_CTS_pol);
 		ptUartArea->ulUartrts = ulValue;
-
-		/* Enable the UART. */
-		ptUartArea->ulUartcr = HOSTMSK(uartcr_uartEN);
 
 #if ASIC_TYP==50
 		/* Loop over the complete MMIO pins and disable all UART instances. */
@@ -289,22 +445,18 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 
 		/* Setup the MMIO pins. */
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
-		uprintf("RXD: %d\n", uiIdx);
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
 
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
-		uprintf("TXD: %d\n", uiIdx);
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
 
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
-		uprintf("CTS: %d\n", uiIdx);
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
 
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
-		uprintf("RTS: %d\n", uiIdx);
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRts;
 #elif ASIC_TYP==100 || ASIC_TYP==500
@@ -315,7 +467,37 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 		ptGpioArea->aulGpio_cfg[uiIdx+3] = 2;
 #endif
 
-		iResult = 0;
+		/* Enable the UART. */
+		ptUartArea->ulUartcr = HOSTMSK(uartcr_uartEN);
+
+		/* Clear the FIFO from any garbage. */
+		uiIdx = 256;
+		do
+		{
+			ulValue  = ptUartArea->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_RXFE);
+			if( ulValue!=0 )
+			{
+				/* The receive FIFO is empty. */
+				uprintf("The receive FIFO is clear!\n");
+				break;
+			}
+			else
+			{
+				ulValue = ptUartArea->ulUartdr;
+				uprintf("Remove garbage from the receive FIFO: 0x%02x\n", ulValue);
+			}
+			--uiIdx;
+		} while( uiIdx!=0 );
+
+		if( uiIdx==0 )
+		{
+			uprintf("The receive FIFO is continuously filled with garbage. Stopping the test!\n");
+		}
+		else
+		{
+			iResult = 0;
+		}
 	}
 
 	return iResult;
@@ -454,21 +636,33 @@ TEST_RESULT_T test(TEST_PARAMETER_T *ptTestParam)
 	uprintf(". verbose: 0x%08x\n", ptTestParams->ulVerboseLevel);
 	uprintf(". unit: 0x%08x\n", ptTestParams->uiUnit);
 	uprintf(". baud rate divider: 0x%08x\n", ptTestParams->ulBaudDivider);
-	uprintf(". MMIO: %d %d %d %d\n\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS]);
+	uprintf(". RXD: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD]);
+	uprintf(". TXD: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD]);
+	uprintf(". CTS: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS]);
+	uprintf(". RTS: MMIO%d\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS]);
+	uprintf("\n");
 	
 	tCfg.uiUnit = ptTestParams->uiUnit;
 	tCfg.ulBaudDiv = ptTestParams->ulBaudDivider;
 	tCfg.ptArea = NULL;
 	memcpy(tCfg.aucMMIO, ptTestParams->aucMMIO, sizeof(tCfg.aucMMIO));
 
-	iResult = uart_init(&tCfg);
+	iResult = rtscts_io_test(&tCfg);
 	if( iResult!=0 )
 	{
-		uprintf("Failed to initialize the UART!\n");
+		uprintf("The RTS/CTS IO test failed!\n");
 	}
 	else
 	{
-		iResult = uart_test(&tCfg);
+		iResult = uart_init(&tCfg);
+		if( iResult!=0 )
+		{
+			uprintf("Failed to initialize the UART!\n");
+		}
+		else
+		{
+			iResult = uart_test(&tCfg);
+		}
 		uart_shutdown(&tCfg);
 	}
 
