@@ -6,12 +6,7 @@
 		<major>1</major>
 		<minor>0</minor>
 	</project_version>
-
-	<!-- Add a custom repository. -->
-	<repositories>
-		<repository name="nexus@netx01">http://nexus.netx01.hilscher.local/content/repositories/mbs_testing</repository>
-	</repositories>
-
+	
 	<scons>
 		<group>org.scons</group>
 		<name>scons-local</name>
@@ -19,7 +14,7 @@
 		<version>2.3.0_1</version>
 		<typ>tar.bz2</typ>
 	</scons>
-
+	
 	<tools>
 		<tool>
 			<group>nz.co.methods</group>
