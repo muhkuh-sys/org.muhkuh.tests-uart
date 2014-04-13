@@ -67,8 +67,38 @@ env_default.Version('targets/version/version.h', 'templates/version.h')
 # Build all sub-projects.
 #
 SConscript('uarttest/SConscript')
-#Import('uarttest_netx500', 'uarttest_netx56', 'uarttest_netx50', 'uarttest_netx10')
-Import('uarttest_netx56')
+Import('uarttest_netx500', 'uarttest_netx56', 'uarttest_netx50', 'uarttest_netx10')
+
+
+#----------------------------------------------------------------------------
+#
+# Build the documentation.
+#
+
+# Get the default attributes.
+aAttribs = env_default['ASCIIDOC_ATTRIBUTES']
+# Add some custom attributes.
+aAttribs.update(dict({
+	# Use ASCIIMath formulas.
+	'asciimath': True,
+	
+	# Embed images into the HTML file as data URIs.
+	'data-uri': True,
+	
+	# Use icons instead of text for markers and callouts.
+	'icons': True,
+	
+	# Use numbers in the table of contents.
+	'numbered': True,
+	
+	# Generate a scrollable table of contents on the left of the text.
+	'toc2': True,
+	
+	# Use 4 levels in the table of contents.
+	'toclevels': 4
+}))
+
+doc = env_default.Asciidoc('targets/doc/uart.html', 'README.asciidoc', ASCIIDOC_BACKEND='html5', ASCIIDOC_ATTRIBUTES=aAttribs)
 
 
 #----------------------------------------------------------------------------
@@ -76,10 +106,10 @@ Import('uarttest_netx56')
 # Make a local demo installation.
 #
 # Copy all binary binaries.
-#Command('targets/testbench/netx/crctest_netx10.bin',  crctest_netx10,  Copy("$TARGET", "$SOURCE"))
-#Command('targets/testbench/netx/crctest_netx50.bin',  crctest_netx50,  Copy("$TARGET", "$SOURCE"))
-Command('targets/testbench/netx/crctest_netx56.bin',  crctest_netx56,  Copy("$TARGET", "$SOURCE"))
-#Command('targets/testbench/netx/crctest_netx500.bin', crctest_netx500, Copy("$TARGET", "$SOURCE"))
+Command('targets/testbench/netx/uarttest_netx10.bin',  uarttest_netx10,  Copy("$TARGET", "$SOURCE"))
+Command('targets/testbench/netx/uarttest_netx50.bin',  uarttest_netx50,  Copy("$TARGET", "$SOURCE"))
+Command('targets/testbench/netx/uarttest_netx56.bin',  uarttest_netx56,  Copy("$TARGET", "$SOURCE"))
+Command('targets/testbench/netx/uarttest_netx500.bin', uarttest_netx500, Copy("$TARGET", "$SOURCE"))
 
 # Copy all LUA scripts.
 #Command('targets/testbench/lua/ramtest.lua',  'lua/ramtest.lua', Copy("$TARGET", "$SOURCE"))
