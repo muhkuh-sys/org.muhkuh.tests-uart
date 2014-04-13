@@ -73,14 +73,14 @@ local atDefaultParameters = {
 	[romloader.ROMLOADER_CHIPTYP_NETX56] = {
 		mmio_rxd = 34,
 		mmio_txd = 35,
-		mmio_cts = 0xff,
-		mmio_rts = 0xff
+		mmio_cts = 32,
+		mmio_rts = 33
 	},
 	[romloader.ROMLOADER_CHIPTYP_NETX56B] = {
 		mmio_rxd = 34,
 		mmio_txd = 35,
-		mmio_cts = 0xff,
-		mmio_rts = 0xff
+		mmio_cts = 32,
+		mmio_rts = 33
 	},
 	[romloader.ROMLOADER_CHIPTYP_NETX50] = {
 		mmio_rxd = 34,
