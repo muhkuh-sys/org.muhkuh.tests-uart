@@ -225,15 +225,76 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 static int uart_test(UART_CONFIGURATION_T *ptCfg)
 {
 	int iResult;
+	HOSTADEF(UART) *ptUartArea;
+	unsigned long ulLoopMax;
+	unsigned long ulLoopCnt;
+	unsigned long ulValue;
+	unsigned long ulTimerHandle;
+	unsigned long ulRxTimeoutMs;
+	unsigned long ulSend;
 
+
+	uprintf("Transfering data...\n");
+
+	ulRxTimeoutMs = 500;
 
 	/* Be pessimistic. */
 	iResult = -1;
 
+	ptUartArea = ptCfg->ptArea;
 
+	ulLoopMax = 512;
+	ulLoopCnt = 0;
+	while( ulLoopCnt<ulLoopMax )
+	{
+		/* Send one byte. */
+		ulSend = ulLoopCnt & 0xffU;
+		ptUartArea->ulUartdr = ulSend;
+
+		/* Wait for a data in the receive FIFO. */
+		ulTimerHandle = systime_get_ms();
+		do
+		{
+			iResult = systime_elapsed(ulTimerHandle, ulRxTimeoutMs);
+			if( iResult!=0 )
+			{
+				uprintf("No response received for loop %d after %dms!\n", ulLoopCnt, ulRxTimeoutMs);
+				break;
+			}
+
+			ulValue  = ptUartArea->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_RXFE);
+		} while( ulValue!=0 );
+
+		if( iResult!=0 )
+		{
+			break;
+		}
+		else
+		{
+			/* Get the received byte and compare it to the send data. */
+			ulValue = ptUartArea->ulUartdr;
+			if( ulValue!=ulSend )
+			{
+				uprintf("Sent 0x%02x, but received 0x%02x!\n", ulSend, ulValue);
+				iResult = -1;
+				break;
+			}
+			else
+			{
+				++ulLoopCnt;
+			}
+		}
+	}
+
+	if( iResult==0 )
+	{
+		uprintf("Transfer OK!\n");
+	}
 
 	return iResult;
 }
+
 
 
 static void uart_shutdown(UART_CONFIGURATION_T *ptCfg)
@@ -263,7 +324,9 @@ static void uart_shutdown(UART_CONFIGURATION_T *ptCfg)
 	ptUartArea->ulUartdrvout = 0;
 }
 
+
 /*-------------------------------------------------------------------------*/
+
 
 TEST_RESULT_T test(TEST_PARAMETER_T *ptTestParam)
 {
