@@ -15,6 +15,7 @@ typedef enum UARTTEST_PARAMETER_MMIO_INDEX_ENUM
 
 typedef struct UARTTEST_PARAMETER_STRUCT
 {
+	unsigned long ulVerboseLevel;
 	unsigned int uiUnit;
 	unsigned char aucMMIO[4];
 } UARTTEST_PARAMETER_T;

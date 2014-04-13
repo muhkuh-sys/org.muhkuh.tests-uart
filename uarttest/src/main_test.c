@@ -26,8 +26,9 @@ TEST_RESULT_T test(TEST_PARAMETER_T *ptTestParam)
 	/* Get the test parameter. */
 	ptTestParams = (UARTTEST_PARAMETER_T*)(ptTestParam->pvInitParams);
 
+	uprintf(". verbose: 0x%08x\n", ptTestParams->ulVerboseLevel);
 	uprintf(". unit: 0x%08x\n", ptTestParams->uiUnit);
-	uprintf(". MMIO: %d %d %d %d\n\n", ptTestParams->aucMMIO[0], ptTestParams->aucMMIO[1], ptTestParams->aucMMIO[2], ptTestParams->aucMMIO[3]);
+	uprintf(". MMIO: %d %d %d %d\n\n", ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS], ptTestParams->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS]);
 	
 
 	rdy_run_setLEDs(RDYRUN_GREEN);
