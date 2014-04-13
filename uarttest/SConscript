@@ -77,3 +77,11 @@ uarttest_netx10 = env_netx10_t.ObjCopy('targets/netx10/uarttest.bin', elf_netx10
 Export('uarttest_netx500', 'uarttest_netx56', 'uarttest_netx50', 'uarttest_netx10')
 
 
+#----------------------------------------------------------------------------
+#
+# Generate the LUA scripts from the template.
+# This extracts symbols and enumeration values from the ELF file and inserts
+# them into the LUA script.
+#
+LUA_UARTTEST = env_netx56_t.GccSymbolTemplate('targets/lua/uart_test.lua', elf_netx56_t, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uart_test.lua'))
+Export('LUA_UARTTEST')

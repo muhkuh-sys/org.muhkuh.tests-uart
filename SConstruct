@@ -68,7 +68,7 @@ env_default.Version('targets/version/version.h', 'templates/version.h')
 #
 SConscript('uarttest/SConscript')
 Import('uarttest_netx500', 'uarttest_netx56', 'uarttest_netx50', 'uarttest_netx10')
-
+Import('LUA_UARTTEST')
 
 #----------------------------------------------------------------------------
 #
@@ -112,6 +112,5 @@ Command('targets/testbench/netx/uarttest_netx56.bin',  uarttest_netx56,  Copy("$
 Command('targets/testbench/netx/uarttest_netx500.bin', uarttest_netx500, Copy("$TARGET", "$SOURCE"))
 
 # Copy all LUA scripts.
-#Command('targets/testbench/lua/ramtest.lua',  'lua/ramtest.lua', Copy("$TARGET", "$SOURCE"))
-#Command('targets/testbench/ramtest_MEM_IS42S32800B.lua',  'lua/ramtest_MEM_IS42S32800B.lua', Copy("$TARGET", "$SOURCE"))
-#Command('targets/testbench/ramtest_MEM_MT48LC2M32.lua',   'lua/ramtest_MEM_MT48LC2M32.lua',  Copy("$TARGET", "$SOURCE"))
+Command('targets/testbench/lua/uart_test.lua',  LUA_UARTTEST, Copy("$TARGET", "$SOURCE"))
+
