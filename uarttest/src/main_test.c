@@ -159,6 +159,10 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 #endif
 
 
+	/* TODO: drive the RTS pin with GPIO/MMIO and receive with the CTS
+	 * pin to be completely sure that the connection works.
+	 */
+
 	/* expect error */
 	iResult = -1;
 
