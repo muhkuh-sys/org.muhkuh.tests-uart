@@ -1,9 +1,9 @@
-module("test01", package.seeall)
+module("${MODULE_NAME}", package.seeall)
 
 require("parameters")
 require("uart_test")
 
-CFG_strTestName = "UART_TEST"
+CFG_strTestName = "${TEST_NAME}"
 
 CFG_aParameterDefinitions = {
 	{
