@@ -27,6 +27,8 @@
 SConscript('mbs/SConscript')
 Import('env_default')
 
+import os.path
+
 
 #----------------------------------------------------------------------------
 #
@@ -98,7 +100,38 @@ aAttribs.update(dict({
 	'toclevels': 4
 }))
 
-doc = env_default.Asciidoc('targets/doc/uart.html', 'README.asciidoc', ASCIIDOC_BACKEND='html5', ASCIIDOC_ATTRIBUTES=aAttribs)
+doc = env_default.Asciidoc('targets/doc/org.muhkuh.tests.uart.html', 'README.asciidoc', ASCIIDOC_BACKEND='html5', ASCIIDOC_ATTRIBUTES=aAttribs)
+
+
+#----------------------------------------------------------------------------
+#
+# Build the artifact.
+#
+
+tArcList = env_default.ArchiveList('zip')
+
+tArcList.AddFiles('doc/',
+	doc)
+
+tArcList.AddFiles('lua/',
+	LUA_UARTTEST)
+
+tArcList.AddFiles('netx/',
+	uarttest_netx500,
+	uarttest_netx56,
+	uarttest_netx50,
+	uarttest_netx10)
+
+tArcList.AddFiles('templates/',
+        'templates/test.lua')
+
+tArcList.AddFiles('',
+	'ivy/org.muhkuh.tests.uart/install.xml')
+
+strArtifactPath = 'targets/ivy/repository/org/muhkuh/tests/uart/%s' % env_default.ArtifactVersion_Get()
+tArc = env_default.Archive(os.path.join(strArtifactPath, 'uart-%s.zip' % env_default.ArtifactVersion_Get()), None, ARCHIVE_CONTENTS=tArcList)
+
+env_default.ArtifactVersion(os.path.join(strArtifactPath, 'ivy-%s.xml' % env_default.ArtifactVersion_Get()), 'ivy/org.muhkuh.tests.uart/ivy.xml')
 
 
 #----------------------------------------------------------------------------
