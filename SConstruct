@@ -108,30 +108,43 @@ doc = env_default.Asciidoc('targets/doc/org.muhkuh.tests.uart.html', 'README.asc
 # Build the artifact.
 #
 
-tArcList = env_default.ArchiveList('zip')
+aArtifactServer = ('nexus@netx01', 'muhkuh', 'muhkuh_snapshots')
+strArtifactGroup = 'tests.muhkuh.org'
+strArtifactId = 'uart'
 
-tArcList.AddFiles('doc/',
+
+tArcList0 = env_default.ArchiveList('zip')
+
+tArcList0.AddFiles('doc/',
 	doc)
 
-tArcList.AddFiles('lua/',
+tArcList0.AddFiles('lua/',
 	LUA_UARTTEST)
 
-tArcList.AddFiles('netx/',
+tArcList0.AddFiles('netx/',
 	uarttest_netx500,
 	uarttest_netx56,
 	uarttest_netx50,
 	uarttest_netx10)
 
-tArcList.AddFiles('templates/',
+tArcList0.AddFiles('templates/',
         'templates/test.lua')
 
-tArcList.AddFiles('',
+tArcList0.AddFiles('',
 	'ivy/org.muhkuh.tests.uart/install.xml')
 
-strArtifactPath = 'targets/ivy/repository/org/muhkuh/tests/uart/%s' % env_default.ArtifactVersion_Get()
-tArc = env_default.Archive(os.path.join(strArtifactPath, 'uart-%s.zip' % env_default.ArtifactVersion_Get()), None, ARCHIVE_CONTENTS=tArcList)
 
-env_default.ArtifactVersion(os.path.join(strArtifactPath, 'ivy-%s.xml' % env_default.ArtifactVersion_Get()), 'ivy/org.muhkuh.tests.uart/ivy.xml')
+aArtifactGroupReverse = strArtifactGroup.split('.')
+aArtifactGroupReverse.reverse()
+
+strArtifactPath = 'targets/ivy/repository/%s/%s/%s' % ('/'.join(aArtifactGroupReverse),strArtifactId,PROJECT_VERSION)
+tArc0 = env_default.Archive(os.path.join(strArtifactPath, '%s-%s.zip' % (strArtifactId,PROJECT_VERSION)), None, ARCHIVE_CONTENTS=tArcList0)
+tIvy0 = env_default.ArtifactVersion(os.path.join(strArtifactPath, '%s-%s.ivy' % (strArtifactId,PROJECT_VERSION)), 'ivy/%s.%s/ivy.xml' % ('.'.join(aArtifactGroupReverse),strArtifactId))
+
+env_default.AddArtifact(tArc0, aArtifactServer, strArtifactGroup, strArtifactId, PROJECT_VERSION, 'zip')
+env_default.AddArtifact(tIvy0, aArtifactServer, strArtifactGroup, strArtifactId, PROJECT_VERSION, 'ivy')
+
+tArtifacts = env_default.Artifact('targets/artifacts.xml', None)
 
 
 #----------------------------------------------------------------------------
