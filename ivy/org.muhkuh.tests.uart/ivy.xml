@@ -9,6 +9,6 @@
 		<!-- NOTE: add an alternative dependency to the GUI base. -->
 		
 		<!-- This test depends on the muhkuh_base_cli, any version greater than or equal to 2.1.0 . -->
-		<dependency org="org.muhkuh.tools" name="muhkuh_base_cli" rev="[2.1.0,)"/>
+		<dependency org="org.muhkuh.tools" name="muhkuh_base_cli" rev="2.1.0"/>
 	</dependencies>
 </ivy-module>
