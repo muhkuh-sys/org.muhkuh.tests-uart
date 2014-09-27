@@ -13,10 +13,10 @@
 		</copy>
 		
 		<!-- Copy the template to the destination and replace the tokens. -->
-		<copy file="templates/test.lua" tofile="${install.base}/${muhkuh_test.module_name}.lua">
+		<copy file="templates/test.lua" tofile="${install.base}/${mbs.install.org.muhkuh.tests.uart.module_name}.lua">
 			<filterset>
-				<filter token="MODULE_NAME" value="${muhkuh_test.module_name}" />
-				<filter token="TEST_NAME"   value="${muhkuh_test.test_name}" />
+				<filter token="MODULE_NAME" value="${mbs.install.org.muhkuh.tests.uart.module_name}" />
+				<filter token="TEST_NAME"   value="${mbs.install.org.muhkuh.tests.uart.test_name}" />
 			</filterset>
 		</copy>
 	</target>
