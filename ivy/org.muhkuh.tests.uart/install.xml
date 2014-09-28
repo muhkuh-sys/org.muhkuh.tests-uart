@@ -1,5 +1,7 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="uart" default="install">
 	<target name="install" description="install all components">
+		<echo>org.muhkuh.tests.uart</echo>
+		
 		<copy todir="${install.documentation}" includeEmptyDirs="true">
 			<fileset dir="doc" />
 		</copy>
