@@ -1,5 +1,5 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="uart" default="install">
-	<target name="install" description="install all components">
+	<target name="install_testcase" description="install the test case">
 		<echo>org.muhkuh.tests.uart</echo>
 		
 		<copy todir="${install.documentation}" includeEmptyDirs="true">
@@ -15,11 +15,13 @@
 		</copy>
 		
 		<!-- Copy the template to the destination and replace the tokens. -->
-		<copy file="templates/test.lua" tofile="${install.base}/${mbs.install.org.muhkuh.tests.uart.module_name}.lua">
+		<copy file="templates/test.lua" tofile="${install.base}/${muhkuh.testcase.module_name}.lua">
 			<filterset>
-				<filter token="MODULE_NAME" value="${mbs.install.org.muhkuh.tests.uart.module_name}" />
-				<filter token="TEST_NAME"   value="${mbs.install.org.muhkuh.tests.uart.test_name}" />
+				<filter token="MODULE_NAME" value="${muhkuh.testcase.module_name}" />
+				<filter token="TEST_NAME"   value="${muhkuh.testcase.test_name}" />
 			</filterset>
 		</copy>
 	</target>
+	
+	<target name="install" description="install common components" />
 </project>
