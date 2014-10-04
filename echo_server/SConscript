@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------#
+#   Copyright (C) 2014 by Christoph Thelen                                #
+#   doc_bacardi@users.sourceforge.net                                     #
+#                                                                         #
+#   This program is free software; you can redistribute it and/or modify  #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 2 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   This program is distributed in the hope that it will be useful,       #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program; if not, write to the                         #
+#   Free Software Foundation, Inc.,                                       #
+#   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
+#-------------------------------------------------------------------------#
+
+
+#----------------------------------------------------------------------------
+#
+# Import all required objects.
+#
+Import('env_default')
+Import('env_netx500_default', 'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
+
+
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+sources_common = """
+	src/init.S
+	src/main.c
+"""
+
+
+#----------------------------------------------------------------------------
+#
+# Build the echo server.
+#
+aCppPath = ['src', '#platform/src', '#platform/src/lib', '#targets/version']
+
+env_netx500_s = env_netx500_default.Clone()
+env_netx500_s.Replace(LDFILE = 'src/netx500/netx500.ld')
+env_netx500_s.Append(CPPPATH = aCppPath)
+src_netx500_s = env_netx500_s.SetBuildPath('targets/netx500', 'src', sources_common)
+elf_netx500_s = env_netx500_s.Elf('targets/netx500/echo_server.elf', src_netx500_s + platform_lib_netx500)
+
+
+env_netx56_s = env_netx56_default.Clone()
+env_netx56_s.Replace(LDFILE = 'src/netx56/netx56.ld')
+env_netx56_s.Append(CPPPATH = aCppPath)
+src_netx56_s = env_netx56_s.SetBuildPath('targets/netx56', 'src', sources_common)
+elf_netx56_s = env_netx56_s.Elf('targets/netx56/standalone/echo_server.elf', src_netx56_s + platform_lib_netx56)
+
+
+env_netx50_s = env_netx50_default.Clone()
+env_netx50_s.Replace(LDFILE = 'src/netx50/netx50.ld')
+env_netx50_s.Append(CPPPATH = aCppPath)
+src_netx50_s = env_netx50_s.SetBuildPath('targets/netx50', 'src', sources_common)
+elf_netx50_s = env_netx50_s.Elf('targets/netx50/standalone/echo_server.elf', src_netx50_s + platform_lib_netx50)
+
+env_netx10_s = env_netx10_default.Clone()
+env_netx10_s.Replace(LDFILE = 'src/netx10/netx10.ld')
+env_netx10_s.Append(CPPPATH = aCppPath)
+src_netx10_s = env_netx10_s.SetBuildPath('targets/netx10', 'src', sources_common)
+elf_netx10_s = env_netx10_s.Elf('targets/netx10/standalone/echo_server.elf', src_netx10_s + platform_lib_netx10)
+
+
+
