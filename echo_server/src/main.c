@@ -3,6 +3,7 @@
 
 #include "netx_io_areas.h"
 
+#include "delay.h"
 #include "rdy_run.h"
 #include "serial_vectors.h"
 #include "systime.h"
@@ -113,9 +114,21 @@ SERIAL_COMM_UI_FN_T tSerialVectors;
 /*-------------------------------------------------------------------------*/
 
 
+static const UART_CONFIGURATION_T tUart1Cfg =
+{
+	.uc_rx_mmio = 0U,
+	.uc_tx_mmio = 1U,
+	.uc_rts_mmio = 0xffU,
+	.uc_cts_mmio = 0xffU,
+	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
+};
+
+
+
 void echo_server_main(void) __attribute__ ((noreturn));
 void echo_server_main(void)
 {
+	BLINKI_HANDLE_T tBlinkiHandle;
 #if ASIC_TYP==56
 	HOSTDEF(ptAsicCtrlArea);
 	HOSTDEF(ptMmioCtrlArea);
@@ -123,6 +136,7 @@ void echo_server_main(void)
 	unsigned long ulChipSubType;
 	CHIP_SUBTYP_T tChipSubTyp;
 #endif
+	unsigned int uiData;
 
 
 	systime_init();
@@ -158,9 +172,59 @@ void echo_server_main(void)
 
 	uprintf("\f. *** Echo server by Christoph Thelen <doc_bacardi@users.sourceforge.net> ***\n");
 	uprintf("V" VERSION_ALL "\n\n");
-
-	while(1);
+	
+	/* Switch all LEDs off. */
+	rdy_run_setLEDs(RDYRUN_OFF);
+	
+	
+	/* Init UART1. */
+	uart_init(1, &tUart1Cfg);
+	
+	/* setup the MMIO pins */
+	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+	/* MMIO3 is connected to PB_ENB. This should be a PIO pin. */
+	ptMmioCtrlArea->aulMmio_cfg[3] = MMIO_CFG_PIO;
+	
+	
+	/* Switch the driver off -> drive MMIO3 to low. */
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0;
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] = 0;
+	
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = 1U << 3U;
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = 0;
+	
+	
+	rdy_run_blinki_init(&tBlinkiHandle, 0x00000055, 0x00000150);
+	while(1)
+	{
+		if( uart_peek(1)!=0 )
+		{
+			uiData = uart_get(1);
+//			uprintf("%02x\n", uiData);
+			if( uiData<0x100U )
+			{
+				/* Enable the output driver. */
+				ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 1U << 3U;
+				delay_us(10);
+				
+				/* Send the data. */
+				uart_put(1, (unsigned char)uiData);
+				
+				/* Wait until the data has been sent. */
+				uart_flush(1);
+				
+				/* Ignore the local echo. */
+				uiData = uart_get(1);
+				
+				/* Disable the output driver. */
+				ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0U;
+//				systime_delay(2);
+			}
+		}
+		rdy_run_blinki(&tBlinkiHandle);
+	}
 }
+
 
 /*-----------------------------------*/
 
