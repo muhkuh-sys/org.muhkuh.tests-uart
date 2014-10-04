@@ -3,6 +3,7 @@
 
 #include <string.h>
 
+#include "delay.h"
 #include "netx_io_areas.h"
 #include "netx_test.h"
 #include "rdy_run.h"
@@ -568,6 +569,8 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 	unsigned long ulTimerHandle;
 	unsigned long ulRxTimeoutMs;
 	unsigned long ulSend;
+	HOSTDEF(ptAsicCtrlArea);
+	HOSTDEF(ptMmioCtrlArea);
 
 
 	uprintf("Transfering data...\n");
@@ -579,14 +582,98 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 
 	ptUartArea = ptCfg->ptArea;
 
+
+	/* setup the MMIO pins */
+	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+	/* MMIO3 is connected to PB_ENB. This should be a PIO pin. */
+	ptMmioCtrlArea->aulMmio_cfg[3] = MMIO_CFG_PIO;
+
+
+	/* Switch the driver off -> drive MMIO3 to low. */
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0;
+	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] = 0;
+
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = 1U << 3U;
+	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = 0;
+
+
 	ulLoopMax = 512;
 	ulLoopCnt = 0;
 	while( ulLoopCnt<ulLoopMax )
 	{
+		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Has_Output_Driver))!=0 )
+		{
+			/* Enable the output driver. */
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 1U << 3U;
+			delay_us(10);
+		}
+		
 		/* Send one byte. */
 		ulSend = ulLoopCnt & 0xffU;
 		ptUartArea->ulUartdr = ulSend;
-
+		
+		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Receive_Own_Echo))!=0 )
+		{
+			/* Wait until the UART is not busy anymore. */
+			ulTimerHandle = systime_get_ms();
+			do
+			{
+				iResult = systime_elapsed(ulTimerHandle, ulRxTimeoutMs);
+				if( iResult!=0 )
+				{
+					break;
+				}
+				
+				ulValue  = ptUartArea->ulUartfr;
+				ulValue &= HOSTMSK(uartfr_BUSY);
+			} while( ulValue!=0 );
+			if( iResult!=0 )
+			{
+				uprintf("The UART could not send the data for loop %d after %dms!\n", ulLoopCnt, ulRxTimeoutMs);
+				break;
+			}
+			
+			/* Now there must be our own echo. */
+			ulTimerHandle = systime_get_ms();
+			do
+			{
+				iResult = systime_elapsed(ulTimerHandle, ulRxTimeoutMs);
+				if( iResult!=0 )
+				{
+					break;
+				}
+				
+				ulValue  = ptUartArea->ulUartfr;
+				ulValue &= HOSTMSK(uartfr_RXFE);
+			} while( ulValue!=0 );
+		}
+		
+		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Has_Output_Driver))!=0 )
+		{
+			/* Disable the output driver. */
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0U;
+		}
+		
+		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Receive_Own_Echo))!=0 )
+		{
+			if( iResult!=0 )
+			{
+				/* The FIFO is still empty. */
+				uprintf("Did not receive our own echo in loop %d!\n", ulLoopCnt);
+				iResult = -1;
+				break;
+			}
+			
+			/* Get the received byte and compare it to the send data. */
+			ulValue = ptUartArea->ulUartdr;
+			if( ulValue!=ulSend )
+			{
+				uprintf("Sent 0x%02x, but received local echo 0x%02x!\n", ulSend, ulValue);
+				iResult = -1;
+				break;
+			}
+		}
+		
 		/* Wait for a data in the receive FIFO. */
 		ulTimerHandle = systime_get_ms();
 		do
@@ -594,33 +681,28 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 			iResult = systime_elapsed(ulTimerHandle, ulRxTimeoutMs);
 			if( iResult!=0 )
 			{
-				uprintf("No response received for loop %d after %dms!\n", ulLoopCnt, ulRxTimeoutMs);
 				break;
 			}
-
+			
 			ulValue  = ptUartArea->ulUartfr;
 			ulValue &= HOSTMSK(uartfr_RXFE);
 		} while( ulValue!=0 );
-
 		if( iResult!=0 )
 		{
+			uprintf("No response received for loop %d after %dms!\n", ulLoopCnt, ulRxTimeoutMs);
 			break;
 		}
-		else
+		
+		/* Get the received byte and compare it to the send data. */
+		ulValue = ptUartArea->ulUartdr;
+		if( ulValue!=ulSend )
 		{
-			/* Get the received byte and compare it to the send data. */
-			ulValue = ptUartArea->ulUartdr;
-			if( ulValue!=ulSend )
-			{
-				uprintf("Sent 0x%02x, but received 0x%02x!\n", ulSend, ulValue);
-				iResult = -1;
-				break;
-			}
-			else
-			{
-				++ulLoopCnt;
-			}
+			uprintf("Sent 0x%02x, but received 0x%02x!\n", ulSend, ulValue);
+			iResult = -1;
+			break;
 		}
+		
+		++ulLoopCnt;
 	}
 
 	if( iResult==0 )

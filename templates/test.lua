@@ -60,7 +60,7 @@ CFG_aParameterDefinitions = {
 		help="The flags for the test.",
 		mandatory=false,
 		validate=parameters.test_choice_multiple,
-		constrains="USE_RTS_CTS"
+		constrains="USE_RTS_CTS,HAS_OUTPUT_DRIVER,RECEIVE_OWN_ECHO"
 	}
 }
 
@@ -123,6 +123,10 @@ function run(aParameters)
 	for iCnt,strElement in ipairs(astrElements) do
 		if strElement=="USE_RTS_CTS" then
 			ulFlags = ulFlags + uart_test.UARTTEST_FLAGS_Use_CTS_RTS
+		elseif strElement=="HAS_OUTPUT_DRIVER" then
+			ulFlags = ulFlags + uart_test.UARTTEST_FLAGS_Has_Output_Driver
+		elseif strElement=="RECEIVE_OWN_ECHO" then
+			ulFlags = ulFlags + uart_test.UARTTEST_FLAGS_Receive_Own_Echo
 		else
 			error(string.format("Unknown flag: %s", strElement))
 		end
