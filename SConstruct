@@ -72,6 +72,9 @@ SConscript('uarttest/SConscript')
 Import('uarttest_netx500', 'uarttest_netx56', 'uarttest_netx50', 'uarttest_netx10')
 Import('LUA_UARTTEST')
 
+SConscript('echo_server/SConscript')
+
+
 #----------------------------------------------------------------------------
 #
 # Build the documentation.
