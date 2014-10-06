@@ -33,6 +33,7 @@ Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'pl
 # This is the list of sources. The elements must be separated with whitespace
 # (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
 sources_common = """
+	src/delay.c
 	src/init.S
 	src/main.c
 """
@@ -44,31 +45,40 @@ sources_common = """
 #
 aCppPath = ['src', '#platform/src', '#platform/src/lib', '#targets/version']
 
-env_netx500_s = env_netx500_default.Clone()
-env_netx500_s.Replace(LDFILE = 'src/netx500/netx500.ld')
-env_netx500_s.Append(CPPPATH = aCppPath)
-src_netx500_s = env_netx500_s.SetBuildPath('targets/netx500', 'src', sources_common)
-elf_netx500_s = env_netx500_s.Elf('targets/netx500/echo_server.elf', src_netx500_s + platform_lib_netx500)
+#env_netx500_s = env_netx500_default.Clone()
+#env_netx500_s.Replace(LDFILE = 'src/netx500/netx500.ld')
+#env_netx500_s.Append(CPPPATH = aCppPath)
+#src_netx500_s = env_netx500_s.SetBuildPath('targets/netx500', 'src', sources_common)
+#elf_netx500_s = env_netx500_s.Elf('targets/netx500/echo_server.elf', src_netx500_s + platform_lib_netx500)
+#bb0_netx500 = env_netx500_s.BootBlock('targets/netx500/netx.rom', elf_netx500_s, BOOTBLOCK_SRC='MMC', BOOTBLOCK_DST='INTRAM')
+#bb1_netx500 = env_netx500_s.BootBlock('targets/netx500/echo_server_netx500_spi_intram.bin', elf_netx500_s, BOOTBLOCK_SRC='SPI_GEN_10', BOOTBLOCK_DST='INTRAM')
 
 
 env_netx56_s = env_netx56_default.Clone()
 env_netx56_s.Replace(LDFILE = 'src/netx56/netx56.ld')
 env_netx56_s.Append(CPPPATH = aCppPath)
 src_netx56_s = env_netx56_s.SetBuildPath('targets/netx56', 'src', sources_common)
-elf_netx56_s = env_netx56_s.Elf('targets/netx56/standalone/echo_server.elf', src_netx56_s + platform_lib_netx56)
+elf_netx56_s = env_netx56_s.Elf('targets/netx56/echo_server.elf', src_netx56_s + platform_lib_netx56)
+bb0_netx56 = env_netx56_s.BootBlock('targets/netx56/netx.rom', elf_netx56_s, BOOTBLOCK_SRC='MMC', BOOTBLOCK_DST='INTRAM')
+bb1_netx56 = env_netx56_s.BootBlock('targets/netx56/echo_server_netx56_spi_intram.bin', elf_netx56_s, BOOTBLOCK_SRC='SPI_GEN_10', BOOTBLOCK_DST='INTRAM')
+uue_netx56 = env_netx56_s.UUEncode('targets/netx56/echo_server_netx56.uue', bb0_netx56)
+
+#env_netx50_s = env_netx50_default.Clone()
+#env_netx50_s.Replace(LDFILE = 'src/netx50/netx50.ld')
+#env_netx50_s.Append(CPPPATH = aCppPath)
+#src_netx50_s = env_netx50_s.SetBuildPath('targets/netx50', 'src', sources_common)
+#elf_netx50_s = env_netx50_s.Elf('targets/netx50/echo_server.elf', src_netx50_s + platform_lib_netx50)
+#bb0_netx50 = env_netx500_s.BootBlock('targets/netx50/netx.rom', elf_netx50_s, BOOTBLOCK_SRC='MMC', BOOTBLOCK_DST='INTRAM')
+#bb1_netx50 = env_netx500_s.BootBlock('targets/netx50/echo_server_netx50_spi_intram.bin', elf_netx50_s, BOOTBLOCK_SRC='SPI_GEN_10', BOOTBLOCK_DST='INTRAM')
 
 
-env_netx50_s = env_netx50_default.Clone()
-env_netx50_s.Replace(LDFILE = 'src/netx50/netx50.ld')
-env_netx50_s.Append(CPPPATH = aCppPath)
-src_netx50_s = env_netx50_s.SetBuildPath('targets/netx50', 'src', sources_common)
-elf_netx50_s = env_netx50_s.Elf('targets/netx50/standalone/echo_server.elf', src_netx50_s + platform_lib_netx50)
-
-env_netx10_s = env_netx10_default.Clone()
-env_netx10_s.Replace(LDFILE = 'src/netx10/netx10.ld')
-env_netx10_s.Append(CPPPATH = aCppPath)
-src_netx10_s = env_netx10_s.SetBuildPath('targets/netx10', 'src', sources_common)
-elf_netx10_s = env_netx10_s.Elf('targets/netx10/standalone/echo_server.elf', src_netx10_s + platform_lib_netx10)
+#env_netx10_s = env_netx10_default.Clone()
+#env_netx10_s.Replace(LDFILE = 'src/netx10/netx10.ld')
+#env_netx10_s.Append(CPPPATH = aCppPath)
+#src_netx10_s = env_netx10_s.SetBuildPath('targets/netx10', 'src', sources_common)
+#elf_netx10_s = env_netx10_s.Elf('targets/netx10/echo_server.elf', src_netx10_s + platform_lib_netx10)
+#bb0_netx10 = env_netx10_s.BootBlock('targets/netx10/netx.rom', elf_netx10_s, BOOTBLOCK_SRC='MMC', BOOTBLOCK_DST='INTRAM')
+#bb1_netx10 = env_netx10_s.BootBlock('targets/netx10/echo_server_netx10_spi_intram.bin', elf_netx10_s, BOOTBLOCK_SRC='SPI_GEN_10', BOOTBLOCK_DST='INTRAM')
 
 
 
