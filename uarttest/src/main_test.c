@@ -151,21 +151,21 @@ static void mmio_set(unsigned int uiIdx, unsigned int uiValue)
 	HOSTDEF(ptMmioCtrlArea);
 	unsigned long aulOe[2];
 	unsigned long aulOut[2];
-
-
+	
+	
 	aulOe[0] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0];
 	aulOe[1] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1];
-
+	
 	aulOe[0] |= 1U << uiIdx;
 	aulOe[1] |= 1U << (uiIdx-32U);
-
+	
 	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = aulOe[0];
 	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = aulOe[1];
-
-
+	
+	
 	aulOut[0] = ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0];
 	aulOut[1] = ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1];
-
+	
 	if( uiValue==0 )
 	{
 		aulOut[0] &= ~(1U << uiIdx);
@@ -176,7 +176,7 @@ static void mmio_set(unsigned int uiIdx, unsigned int uiValue)
 		aulOut[0] |= 1U << uiIdx;
 		aulOut[1] |= 1U << (uiIdx-32U);
 	}
-
+	
 	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = aulOut[0];
 	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] = aulOut[1];
 }
@@ -186,8 +186,8 @@ static unsigned long mmio_get(unsigned int uiIdx)
 {
 	HOSTDEF(ptMmioCtrlArea);
 	unsigned long ulResult;
-
-
+	
+	
 	if( uiIdx<32 )
 	{
 		ulResult  = ptMmioCtrlArea->aulMmio_in_line_status[0];
@@ -198,7 +198,7 @@ static unsigned long mmio_get(unsigned int uiIdx)
 		ulResult  = ptMmioCtrlArea->aulMmio_in_line_status[1];
 		ulResult &= 1U << (uiIdx - 32);
 	}
-
+	
 	return ulResult;
 }
 
@@ -207,14 +207,14 @@ static void mmio_set_to_input(unsigned int uiIdx)
 {
 	HOSTDEF(ptMmioCtrlArea);
 	unsigned long aulOe[2];
-
-
+	
+	
 	aulOe[0] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0];
 	aulOe[1] = ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1];
-
+	
 	aulOe[0] &= ~(1U << uiIdx);
 	aulOe[1] &= ~(1U << (uiIdx-32U));
-
+	
 	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = aulOe[0];
 	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = aulOe[1];
 }
@@ -225,8 +225,8 @@ static void io_stabilize(void)
 {
 	unsigned long ulTimerHandle;
 	int iElapsed;
-
-
+	
+	
 	/* Delay a few cycles. */
 	ulTimerHandle = systime_get_ms();
 	do
@@ -245,28 +245,28 @@ static int rtscts_io_test(UART_CONFIGURATION_T *ptCfg)
 	HOSTDEF(ptMmioCtrlArea);
 	unsigned long ulValue;
 #elif ASIC_TYP==100 || ASIC_TYP==500
-	HOSTDEF(ptGpioArea);
+/*	HOSTDEF(ptGpioArea); */
 #endif
-
-
+	
+	
 	/* Be pessimistic. */
 	iResult = -1;
-
+	
 #if ASIC_TYP==10
-
+	
 #elif ASIC_TYP==56
 	/* Set the RTS and CTS MMIO pins to PIO mode. */
 	uiIdxCts = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
 	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 	ptMmioCtrlArea->aulMmio_cfg[uiIdxCts] = MMIO_CFG_PIO;
-
+	
 	uiIdxRts = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
 	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 	ptMmioCtrlArea->aulMmio_cfg[uiIdxRts] = MMIO_CFG_PIO;
-
-
+	
+	
 	mmio_set_to_input(uiIdxCts);
-
+	
 	/* Drive RTS to 0. */
 	uprintf("RTS -> 0\n");
 	mmio_set(uiIdxRts, 0);
@@ -293,15 +293,15 @@ static int rtscts_io_test(UART_CONFIGURATION_T *ptCfg)
 			iResult = 0;
 		}
 	}
-
+	
 	/* Set RTS back to input. */
 	mmio_set_to_input(uiIdxRts);
 #elif ASIC_TYP==50
-
+	
 #elif ASIC_TYP==100 || ASIC_TYP==500
-
+	
 #endif
-
+	
 	return iResult;
 }
 
@@ -323,39 +323,39 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 #elif ASIC_TYP==100 || ASIC_TYP==500
 	HOSTDEF(ptGpioArea);
 #endif
-
-
+	
+	
 	/* expect error */
 	iResult = -1;
-
+	
 	ulUseRtsCts  = ptCfg->ulFlags;
 	ulUseRtsCts &= (unsigned long)UARTTEST_FLAGS_Use_CTS_RTS;
-
+	
 	uiUartUnit = ptCfg->uiUnit;
 	if( uiUartUnit<(sizeof(atUartInstances)/sizeof(atUartInstances[0])) )
 	{
 		/* Get the UART area. */
 		ptUartArea = atUartInstances[uiUartUnit].ptArea;
-
+		
 		/* Remember the pointer to the area for later. */
 		ptCfg->ptArea = ptUartArea;
-
+		
 		/* Disable the UART. */
 		ptUartArea->ulUartcr = 0;
-
+		
 		/* Use baud rate mode 2. */
 		ptUartArea->ulUartcr_2 = HOSTMSK(uartcr_2_Baud_Rate_Mode);
-
+		
 		/* Set the baud rate. */
 		ulValue = ptCfg->ulBaudDiv;
 		ptUartArea->ulUartlcr_l =  ulValue        & 0xffU;
 		ptUartArea->ulUartlcr_m = (ulValue >> 8U) & 0xffU;
-
+		
 		/* Set the UART to 8N1 and enable the FIFO. */
 		ulValue  = HOSTMSK(uartlcr_h_WLEN);
 		ulValue |= HOSTMSK(uartlcr_h_FEN);
 		ptUartArea->ulUartlcr_h = ulValue;
-
+		
 		/* Enable the drivers for the TXD and RTS line. */
 		ulValue  = HOSTMSK(uartdrvout_DRVTX);
 		if( ulUseRtsCts!=0 )
@@ -363,7 +363,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			ulValue |= HOSTMSK(uartdrvout_DRVRTS);
 		}
 		ptUartArea->ulUartdrvout = ulValue;
-
+		
 		/* Enable RTS/CTS mode. */
 		ulValue  = 0;
 		if( ulUseRtsCts!=0 )
@@ -373,7 +373,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			ulValue |= HOSTMSK(uartrts_CTS_pol);
 		}
 		ptUartArea->ulUartrts = ulValue;
-
+		
 #if ASIC_TYP==50
 		/* Loop over the complete MMIO pins and disable all UART instances. */
 		for(uiIdx=0; uiIdx<(sizeof(ptMmioCtrlArea->aulMmio_cfg)/sizeof(ptMmioCtrlArea->aulMmio_cfg[0])); ++uiIdx)
@@ -392,7 +392,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
 			}
-
+			
 			if( ulUseRtsCts!=0 )
 			{
 				if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
@@ -409,8 +409,8 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				}
 			}
 		}
-
-
+		
+		
 		/* Setup the MMIO pins. */
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
 		if( uiIdx!=0xffU )
@@ -418,14 +418,14 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
 		}
-
+		
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
 		if( uiIdx!=0xffU )
 		{
 			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
 		}
-
+		
 		if( ulUseRtsCts!=0 )
 		{
 			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
@@ -434,7 +434,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
 			}
-
+			
 			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
 			if( uiIdx!=0xffU )
 			{
@@ -460,7 +460,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = ((unsigned long)MMIO_CFG_DISABLE);
 			}
-
+			
 			if( ulUseRtsCts!=0 )
 			{
 				if( ulValue==((unsigned long)(atUartInstances[uiUartUnit].tMmioCts)) )
@@ -477,8 +477,8 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				}
 			}
 		}
-
-
+		
+		
 		/* Setup the MMIO pins. */
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RXD];
 		if( uiIdx!=0xffU )
@@ -486,14 +486,14 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioRx;
 		}
-
+		
 		uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_TXD];
 		if( uiIdx!=0xffU )
 		{
 			ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 			ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioTx;
 		}
-
+		
 		if( ulUseRtsCts!=0 )
 		{
 			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_CTS];
@@ -502,7 +502,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 				ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 				ptMmioCtrlArea->aulMmio_cfg[uiIdx] = atUartInstances[uiUartUnit].tMmioCts;
 			}
-
+			
 			uiIdx = ptCfg->aucMMIO[UARTTEST_PARAMETER_MMIO_INDEX_RTS];
 			if( uiIdx!=0xffU )
 			{
@@ -520,10 +520,10 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			ptGpioArea->aulGpio_cfg[uiIdx+3] = 2;
 		}
 #endif
-
+		
 		/* Enable the UART. */
 		ptUartArea->ulUartcr = HOSTMSK(uartcr_uartEN);
-
+		
 		/* Clear the FIFO from any garbage. */
 		uiIdx = 256;
 		do
@@ -543,7 +543,7 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			}
 			--uiIdx;
 		} while( uiIdx!=0 );
-
+		
 		if( uiIdx==0 )
 		{
 			uprintf("The receive FIFO is continuously filled with garbage. Stopping the test!\n");
@@ -553,8 +553,116 @@ static int uart_init(UART_CONFIGURATION_T *ptCfg)
 			iResult = 0;
 		}
 	}
-
+	
 	return iResult;
+}
+
+
+
+static void init_io_output_driver(UART_CONFIGURATION_T *ptCfg)
+{
+#if ASIC_TYP==56
+	HOSTDEF(ptAsicCtrlArea);
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long ulMmioIdx;
+	unsigned long aulMask[2];
+#endif
+	
+	
+#if ASIC_TYP==56
+	ulMmioIdx = 3U;
+	/* Is this a valid MMIO index? */
+	if( ulMmioIdx!=0xffU )
+	{
+		aulMask[0] = 1U <<  ulMmioIdx;
+		aulMask[1] = 1U << (ulMmioIdx - 32U);
+		
+		/* Setup the MMIO pin. */
+		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+		ptMmioCtrlArea->aulMmio_cfg[ulMmioIdx] = MMIO_CFG_PIO;
+		
+		/* Switch the pin to input. */
+		ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] &= ~(aulMask[0]);
+		ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] &= ~(aulMask[1]);
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0]  &= ~(aulMask[0]);
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1]  &= ~(aulMask[1]);
+	}
+#endif
+}
+
+
+
+/* Enable or disable an output driver. Delay after enabling the driver. */
+static void set_io_output_driver(UART_CONFIGURATION_T *ptCfg, unsigned int uiEnable)
+{
+#if ASIC_TYP==56
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long ulMmioIdx;
+	unsigned long aulMask[2];
+#endif
+
+
+#if ASIC_TYP==56
+	ulMmioIdx = 3U;
+	/* Is this a valid MMIO index? */
+	if( ulMmioIdx!=0xffU )
+	{
+		/* Yes, the MMIO index is valid! */
+		
+		aulMask[0] = 1U <<  ulMmioIdx;
+		aulMask[1] = 1U << (ulMmioIdx - 32U);
+		
+		/* Enable or disable the driver? */
+		if( uiEnable==0 )
+		{
+			/* Disable the driver. */
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] &= ~(aulMask[0]);
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] &= ~(aulMask[1]);
+		}
+		else
+		{
+			/* Enable the driver. */
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] |=   aulMask[0];
+			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] |=   aulMask[1];
+		}
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] |= aulMask[0];
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] |= aulMask[1];
+		
+		/* Delay if the driver was enabled. */
+		if( uiEnable!=0 )
+		{
+			delay_us(10);
+		}
+	}
+#endif
+}
+
+
+
+static void deinit_io_output_driver(UART_CONFIGURATION_T *ptCfg)
+{
+#if ASIC_TYP==56
+	HOSTDEF(ptMmioCtrlArea);
+	unsigned long ulMmioIdx;
+	unsigned long aulMask[2];
+#endif
+	
+	
+#if ASIC_TYP==56
+	ulMmioIdx = 3U;
+	/* Is this a valid MMIO index? */
+	if( ulMmioIdx!=0xffU )
+	{
+		aulMask[0] = 1U <<  ulMmioIdx;
+		aulMask[1] = 1U << (ulMmioIdx - 32U);
+		
+		/* Switch the pin to input. */
+		ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] &= ~(aulMask[0]);
+		ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] &= ~(aulMask[1]);
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0]  &= ~(aulMask[0]);
+		ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1]  &= ~(aulMask[1]);
+	}
+#endif
 }
 
 
@@ -569,33 +677,20 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 	unsigned long ulTimerHandle;
 	unsigned long ulRxTimeoutMs;
 	unsigned long ulSend;
-	HOSTDEF(ptAsicCtrlArea);
-	HOSTDEF(ptMmioCtrlArea);
-
-
+	
+	
 	uprintf("Transfering data...\n");
-
+	
 	ulRxTimeoutMs = 500;
-
+	
 	/* Be pessimistic. */
 	iResult = -1;
-
+	
 	ptUartArea = ptCfg->ptArea;
-
-
-	/* setup the MMIO pins */
-	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-	/* MMIO3 is connected to PB_ENB. This should be a PIO pin. */
-	ptMmioCtrlArea->aulMmio_cfg[3] = MMIO_CFG_PIO;
-
-
-	/* Switch the driver off -> drive MMIO3 to low. */
-	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0;
-	ptMmioCtrlArea->aulMmio_pio_out_line_cfg[1] = 0;
-
-	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[0] = 1U << 3U;
-	ptMmioCtrlArea->aulMmio_pio_oe_line_cfg[1] = 0;
-
+	
+	
+	init_io_output_driver(ptCfg);
+	set_io_output_driver(ptCfg, 0);
 
 	ulLoopMax = 512;
 	ulLoopCnt = 0;
@@ -604,8 +699,7 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Has_Output_Driver))!=0 )
 		{
 			/* Enable the output driver. */
-			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 1U << 3U;
-			delay_us(10);
+			set_io_output_driver(ptCfg, 1);
 		}
 		
 		/* Send one byte. */
@@ -651,7 +745,7 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Has_Output_Driver))!=0 )
 		{
 			/* Disable the output driver. */
-			ptMmioCtrlArea->aulMmio_pio_out_line_cfg[0] = 0U;
+			set_io_output_driver(ptCfg, 0);
 		}
 		
 		if( ((ptCfg->ulFlags)&((unsigned long)UARTTEST_FLAGS_Receive_Own_Echo))!=0 )
@@ -704,7 +798,9 @@ static int uart_test(UART_CONFIGURATION_T *ptCfg)
 		
 		++ulLoopCnt;
 	}
-
+	
+	deinit_io_output_driver(ptCfg);
+	
 	if( iResult==0 )
 	{
 		uprintf("Transfer OK!\n");
