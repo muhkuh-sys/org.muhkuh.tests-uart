@@ -33,6 +33,7 @@ Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'pl
 # This is the list of sources. The elements must be separated with whitespace
 # (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
 sources_common = """
+	src/delay.c
 	src/header.c
 	src/init_netx_test.S
 	src/main_test.c
@@ -42,7 +43,7 @@ sources_common = """
 
 #----------------------------------------------------------------------------
 #
-# Build the crc test.
+# Build the uart test.
 #
 aCppPath = ['src', '#platform/src', '#platform/src/lib', '#targets/version']
 
