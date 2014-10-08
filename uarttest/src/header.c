@@ -32,15 +32,16 @@ extern unsigned long parameter_end_address[];
 const VERSION_HEADER_T tVersionHeader =
 {
 	.acMagic = { 'm', 'o', 'o', 'h' },
-	.ulVersion = 0x00010001,
+	.ulVersion = 0x00010002,
 
 	.pulLoadAddress = load_address,
 	.pfnExecutionAddress = start,
 	.pulParameterStart = parameter_start_address,
 	.pulParameterEnd = parameter_end_address,
 
-	.ulVersionMaj = VERSION_MAJ,
-	.ulVersionMin = VERSION_MIN,
+	.ulVersionMajor = VERSION_MAJOR,
+	.ulVersionMinor = VERSION_MINOR,
+	.ulVersionMicro = VERSION_MICRO,
 	.acVersionVcs = VERSION_VCS
 };
 
