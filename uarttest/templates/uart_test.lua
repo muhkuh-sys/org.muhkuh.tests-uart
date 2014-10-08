@@ -32,9 +32,10 @@ require("romloader")
 --                           Definitions                                   --
 -----------------------------------------------------------------------------
 
-UARTTEST_VERSION_MAJ  = ${VERSION_MAJ}
-UARTTEST_VERSION_MIN  = ${VERSION_MIN}
-UARTTEST_VERSION_VCS  = ${VERSION_VCS}
+UARTTEST_VERSION_MAJOR  = ${VERSION_MAJOR}
+UARTTEST_VERSION_MINOR  = ${VERSION_MINOR}
+UARTTEST_VERSION_MICRO  = ${VERSION_MICRO}
+UARTTEST_VERSION_VCS    = ${VERSION_VCS}
 
 UARTTEST_FLAGS_Use_CTS_RTS       = ${UARTTEST_FLAGS_Use_CTS_RTS}
 UARTTEST_FLAGS_Has_Output_Driver = ${UARTTEST_FLAGS_Has_Output_Driver}
@@ -133,18 +134,22 @@ function run(tPlugin, strPattern, ulVerboseLevel, uiUnit, ucMmioRxd, ucMmioTxd, 
 	end
 
 	-- Check the version.
-	ulVersionMaj = get_dword(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_ulVersionMaj} + 1)
-	ulVersionMin = get_dword(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_ulVersionMin} + 1)
+	ulVersionMajor = get_dword(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_ulVersionMajor} + 1)
+	ulVersionMinor = get_dword(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_ulVersionMinor} + 1)
+	ulVersionMicro = get_dword(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_ulVersionMicro} + 1)
 	strVersionVcs = string.sub(strData, ${OFFSETOF_VERSION_HEADER_STRUCT_acVersionVcs} + 1, ${OFFSETOF_VERSION_HEADER_STRUCT_acVersionVcs} + 16)
 	while string.byte(strVersionVcs,-1)==0 do
 		strVersionVcs = string.sub(strVersionVcs,1,-2)
 	end
-	print(string.format("Binary version: %d.%d.%s", ulVersionMaj, ulVersionMin, strVersionVcs))
-	print(string.format("Script version: %d.%d.%s", UARTTEST_VERSION_MAJ, UARTTEST_VERSION_MIN, UARTTEST_VERSION_VCS))
-	if ulVersionMaj~=UARTTEST_VERSION_MAJ then
+	print(string.format("Binary version: %d.%d.%d %s", ulVersionMajor, ulVersionMinor, ulVersionMicro, strVersionVcs))
+	print(string.format("Script version: %d.%d.%d %s", UARTTEST_VERSION_MAJOR, UARTTEST_VERSION_MINOR, UARTTEST_VERSION_MICRO, UARTTEST_VERSION_VCS))
+	if ulVersionMajor~=UARTTEST_VERSION_MAJOR then
 		error("The major version number of the binary and this script differs. Cowardly refusing to continue.")
 	end
-	if ulVersionMin~=UARTTEST_VERSION_MIN then
+	if ulVersionMinor~=UARTTEST_VERSION_MINOR then
+		error("The minor version number of the binary and this script differs. Cowardly refusing to continue.")
+	end
+	if ulVersionMicro~=UARTTEST_VERSION_MICRO then
 		error("The minor version number of the binary and this script differs. Cowardly refusing to continue.")
 	end
 	if strVersionVcs~=UARTTEST_VERSION_VCS then
