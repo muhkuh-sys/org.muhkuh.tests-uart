@@ -4,7 +4,7 @@ python:
 
 
 env:
-  - secure: iYJ931x7VegTk0Lni6FBKHaPC+vu0misssbMct07gx5iCexV6vnd0mp5HWx16eG5d4ghXmBaDy0KEuhm8JdkS9I0aYFod0KQBCT6jY0PLIRgAKRv+D1q+Y+Bg/hKYD+QPi/bIzxY1Q3B7h1sHJA4/y9poR9zRZu4zpIQWdm8+Hc=
+  - secure: fEQfZBDjjEIQAfpThxsDnJlQZeKLW2XIiWp7lRRYKCpk6tBJevnWzaKm85bz9ty58AYroKGTV+6ThrcZF87czWac3Qp6PB7ycIAPksnBm+BUifjiQjP66WmT1faxtizPM1xTr4jEM0a0tkfN8VFOMaRwzGKntprA4g5TJhrmhDg=
 
 
 install:
