@@ -1,10 +1,10 @@
 language: python
 python:
-  - "2.7"
+  - '2.7'
 
 
 env:
-  - secure: "iYJ931x7VegTk0Lni6FBKHaPC+vu0misssbMct07gx5iCexV6vnd0mp5HWx16eG5d4ghXmBaDy0KEuhm8JdkS9I0aYFod0KQBCT6jY0PLIRgAKRv+D1q+Y+Bg/hKYD+QPi/bIzxY1Q3B7h1sHJA4/y9poR9zRZu4zpIQWdm8+Hc="
+  - secure: iYJ931x7VegTk0Lni6FBKHaPC+vu0misssbMct07gx5iCexV6vnd0mp5HWx16eG5d4ghXmBaDy0KEuhm8JdkS9I0aYFod0KQBCT6jY0PLIRgAKRv+D1q+Y+Bg/hKYD+QPi/bIzxY1Q3B7h1sHJA4/y9poR9zRZu4zpIQWdm8+Hc=
 
 
 install:
@@ -16,3 +16,14 @@ script:
   - python mbs/mbs
   - python ivy/deploy.py targets/artifacts.xml
 
+
+deploy:
+  provider: releases
+  api_key:
+    secure: CpKYgQnfEU/6keULBAlKzXGd5kuGA9IjAsLGHwF0/Zn/bztzU7QpKWRRHxAhzekiCzIlZfXWKDrJ5okSapjGF+x6eB/A9FwginO946VEztRAaRX+BlCF4kj2nb8I/JdGT6CGpnjYX3c5TEAFObHi9pdqMeQLKDWxVemw1bXyROc=
+  file:
+    - targets/ivy/uart.zip
+    - targets/ivy/ivy.xml
+  on:
+    repo: muhkuh-sys/org.muhkuh.tests-uart
+    tags: true
